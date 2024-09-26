@@ -43,6 +43,7 @@ mod ip_checker;
 
 pub use ip_checker::IpCheckerConfig;
 pub use session::SessionHandlerConfig;
+use crate::sse::SseClients;
 
 #[derive(clap::Args)]
 /// Ip Checker configuration args
@@ -109,7 +110,7 @@ impl Drop for Server {
     }
 }
 
-pub async fn run(config: &Config) -> anyhow::Result<Server> {
+pub async fn run(config: &Config, sse_clients: Arc<SseClients>) -> anyhow::Result<Server> {
     let bind_addr: SocketAddr = config.server.address;
 
     let slot_manager = config
@@ -159,10 +160,12 @@ pub async fn run(config: &Config) -> anyhow::Result<Server> {
     let server = {
         let session_manager = session_manager.clone();
         let slot_manager = slot_manager.clone();
+        let sse_clients = sse_clients.clone();
 
         UdpServerBuilder::new(move |reply: Rc<UdpSocket>| {
             let session_manager = session_manager.clone();
             let slot_manager = slot_manager.clone();
+            let sse_clients = sse_clients.clone();
             let checker_ip = reply.local_addr()?.ip();
 
             let session_handler = session::SessionHandler::new(&session_manager, &session_handler_config);
@@ -260,6 +263,10 @@ pub async fn run(config: &Config) -> anyhow::Result<Server> {
                                 let session_id: Option<SessionId> = session_id.try_into().ok();
                                 if let Some(session_id) = session_id {
                                     session_manager.remove_session(&session_id);
+                                    //This function is causing the problem
+                                    // I cannot use it here
+                                    // sse_clients.broadcast("Disconnected").await;
+
                                     log::debug!(target: "request:disconnect", "[{src}] session {session_id} disconnected");
                                 }
                                 None

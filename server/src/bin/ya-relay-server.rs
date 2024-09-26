@@ -2,18 +2,34 @@ use clap::Parser;
 use std::collections::HashMap;
 use std::future;
 use std::net::SocketAddr;
-use std::sync::Arc;
-
-use actix_web::{get, web, Responder};
+use std::sync::{Arc, Mutex};
+use tokio::sync::mpsc::channel;
+use actix_web::{get, web, HttpResponse, Responder};
+use actix_web::web::Data;
+use actix_web_lab::extract::Path;
+use actix_web_lab::sse;
+use log::{info, log};
 use serde::{Deserialize, Serialize};
-
+use tokio::sync::mpsc;
 use ya_relay_core::NodeId;
 use ya_relay_server::metrics::register_metrics;
 use ya_relay_server::{AddrStatus, Config, Selector, SessionManager};
+use ya_relay_server::sse::SseClients;
+// Shared state to manage all the sse clients
+
+
+#[get("/sse")]
+async fn new_sse_client(sse_clients: web::Data<Arc<SseClients>>) -> impl Responder{
+//     add client heer
+    sse_clients.add_client().await;
+    format!("connected and the number of clients are {}",sse_clients.get_no_of_clients())
+
+}
 
 #[get("/sessions")]
 async fn sessions_list(sm: web::Data<Arc<SessionManager>>) -> impl Responder {
     format!("sessions: {}", sm.num_sessions())
+
 }
 
 #[derive(Deserialize)]
@@ -68,6 +84,7 @@ async fn nodes_list_prefix(
     Ok(web::Json(nodes))
 }
 
+
 #[actix_rt::main]
 async fn main() -> anyhow::Result<()> {
     dotenv::dotenv().ok();
@@ -82,11 +99,15 @@ async fn main() -> anyhow::Result<()> {
 
     let args = Config::parse();
 
+    let sse_clients = Arc::new(SseClients::new());
+
     let handle = register_metrics();
 
-    let server = ya_relay_server::run(&args).await?;
+    let server = ya_relay_server::run(&args, sse_clients.clone()).await?;
 
     let sessions = web::Data::new(server.sessions());
+
+    let sse_clients_clone = web::Data::new(sse_clients.clone());
 
     let web_server = actix_web::HttpServer::new(move || {
         use actix_web::*;
@@ -95,8 +116,10 @@ async fn main() -> anyhow::Result<()> {
 
         App::new()
             .app_data(sessions.clone())
+            .app_data(sse_clients_clone.clone())
             .service(nodes_list_prefix)
             .service(sessions_list)
+            .service(new_sse_client)
             .route("/", web::get().to(move || future::ready(handle.render())))
     })
     .workers(1)
