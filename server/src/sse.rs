@@ -6,6 +6,22 @@ use log::{info, log};
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::{channel, Receiver};
 use tokio_stream::wrappers::ReceiverStream;
+use serde::Serialize;
+
+#[derive(Serialize)]
+pub struct SseMessage {
+    pub(crate) status: String,
+    pub(crate) node: NodeInfo,
+}
+
+#[derive(Serialize)]
+pub struct NodeInfo {
+    pub(crate) id: String,
+    pub(crate) peer: String,
+    pub(crate) seen: String,
+    #[serde(rename = "addrStatus")]
+    pub(crate) addr_status: String,
+}
 
 #[derive(Debug, Clone, Default)]
 pub struct SseClients{

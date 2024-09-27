@@ -43,7 +43,7 @@ mod ip_checker;
 
 pub use ip_checker::IpCheckerConfig;
 pub use session::SessionHandlerConfig;
-use crate::sse::SseClients;
+use crate::sse::{SseClients, SseMessage, NodeInfo};
 
 #[derive(clap::Args)]
 /// Ip Checker configuration args
@@ -431,19 +431,3 @@ fn counter_ack(success: &Counter, error: &Counter) -> CompletionHandler {
     Rc::new(CounterAck(success.clone(), error.clone()))
 }
 
-use serde::Serialize;
-
-#[derive(Serialize)]
-struct SseMessage {
-    status: String,
-    node: NodeInfo,
-}
-
-#[derive(Serialize)]
-struct NodeInfo {
-    id: String,
-    peer: String,
-    seen: String,
-    #[serde(rename = "addrStatus")]
-    addr_status: String,
-}
