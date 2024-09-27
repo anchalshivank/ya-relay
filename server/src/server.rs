@@ -263,9 +263,13 @@ pub async fn run(config: &Config, sse_clients: Arc<SseClients>) -> anyhow::Resul
                                 let session_id: Option<SessionId> = session_id.try_into().ok();
                                 if let Some(session_id) = session_id {
                                     session_manager.remove_session(&session_id);
-                                    //This function is causing the problem
-                                    // I cannot use it here
-                                    // sse_clients.broadcast("Disconnected").await;
+                                    let sse_clients_clone = Arc::clone(&sse_clients);
+                                    let broadcast_future = async move {
+                                        let msg = format!("Disconnected {}",session_id);
+                                        sse_clients_clone.broadcast(&msg).await;
+                                    };
+                                    // Spawn the future to handle it asynchronously
+                                    tokio::spawn(broadcast_future);
 
                                     log::debug!(target: "request:disconnect", "[{src}] session {session_id} disconnected");
                                 }

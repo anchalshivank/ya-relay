@@ -1,9 +1,11 @@
 use std::sync::{Arc, Mutex};
 use actix_web_lab::sse;
+use actix_web_lab::sse::Event;
 use futures_util::SinkExt;
-use log::info;
+use log::{info, log};
 use tokio::sync::mpsc;
-use tokio::sync::mpsc::channel;
+use tokio::sync::mpsc::{channel, Receiver};
+use tokio_stream::wrappers::ReceiverStream;
 
 #[derive(Debug, Clone, Default)]
 pub struct SseClients{
@@ -17,11 +19,20 @@ impl SseClients{
         }
     }
 
-    pub async fn add_client(&self){
-        let (tx, rx) = channel(10);
+
+
+    pub async fn add_client(&self) -> ReceiverStream<sse::Event> {
+        let (tx, rx) = mpsc::channel(10);
+
+        // Send a "connected" message to the new client
         tx.send(sse::Data::new("connected").into()).await.unwrap();
+
+        // Add the sender to the list of clients
         self.clients.lock().unwrap().push(tx);
-        info!("SseClients new connection found");
+        info!("New SSE connection established");
+
+        // Return the receiver stream to be used for SSE
+        ReceiverStream::new(rx)
     }
 
     pub fn get_no_of_clients(&self) -> usize{
@@ -33,6 +44,4 @@ impl SseClients{
         let send_futures = clients.iter().map(|client| client.send(sse::Data::new(msg).into()));
         let _ = futures_util::future::join_all(send_futures).await;
     }
-
-
 }
