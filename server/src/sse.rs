@@ -1,12 +1,9 @@
+use log::{info, log};
+use serde::Serialize;
 use std::sync::{Arc, Mutex};
 use actix_web_lab::sse;
-use actix_web_lab::sse::Event;
-use futures_util::SinkExt;
-use log::{info, log};
-use tokio::sync::mpsc;
-use tokio::sync::mpsc::{channel, Receiver};
+use tokio::sync::mpsc::{self};
 use tokio_stream::wrappers::ReceiverStream;
-use serde::Serialize;
 
 #[derive(Serialize)]
 pub struct SseMessage {
@@ -49,10 +46,6 @@ impl SseClients{
 
         // Return the receiver stream to be used for SSE
         ReceiverStream::new(rx)
-    }
-
-    pub fn get_no_of_clients(&self) -> usize{
-        self.clients.lock().unwrap().len()
     }
 
     pub async fn broadcast(&self, msg:&str){

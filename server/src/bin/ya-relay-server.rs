@@ -5,23 +5,18 @@ use std::future;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
-use tokio::sync::mpsc::channel;
-use actix_web::{get, web, HttpResponse, Responder};
+use actix_web::get;
 use actix_web::web::Data;
 use actix_web_lab::extract::Path;
 use actix_web_lab::sse;
 use actix_web_lab::sse::Sse;
 use futures_util::StreamExt;
-use log::{info, log};
 use serde::{Deserialize, Serialize};
-use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 use ya_relay_core::NodeId;
 use ya_relay_server::metrics::register_metrics;
 use ya_relay_server::{AddrStatus, Config, Selector, SessionManager};
 use ya_relay_server::sse::SseClients;
-// Shared state to manage all the sse clients
-
 
 #[get("/sse")]
 async fn new_sse_client(sse_clients: web::Data<Arc<SseClients>>) -> impl Responder {
