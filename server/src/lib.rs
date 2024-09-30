@@ -2,6 +2,7 @@
 mod config;
 pub mod metrics;
 mod server;
+pub mod sse;
 mod state;
 #[cfg(feature = "test-utils")]
 pub mod testing;
