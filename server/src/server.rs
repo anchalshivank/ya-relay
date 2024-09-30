@@ -1,12 +1,12 @@
+use crate::AddrStatus;
+use metrics::Counter;
+use quick_cache::sync::Cache;
+use rand::{thread_rng, Rng};
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use crate::AddrStatus;
-use metrics::Counter;
-use quick_cache::sync::Cache;
-use rand::{thread_rng, Rng};
 use tokio_util::codec::Decoder;
 
 use ya_relay_core::challenge;
@@ -41,9 +41,9 @@ mod state_decoder;
 
 mod ip_checker;
 
+use crate::sse::{NodeInfo, SseClients, SseMessage};
 pub use ip_checker::IpCheckerConfig;
 pub use session::SessionHandlerConfig;
-use crate::sse::{SseClients, SseMessage, NodeInfo};
 
 #[derive(clap::Args)]
 /// Ip Checker configuration args
@@ -430,4 +430,3 @@ fn counter_ack(success: &Counter, error: &Counter) -> CompletionHandler {
 
     Rc::new(CounterAck(success.clone(), error.clone()))
 }
-

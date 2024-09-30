@@ -1,10 +1,12 @@
 use crate::config::Config;
 
 use crate::server::{IpCheckerConfig, Server, ServerConfig, SessionHandlerConfig};
+use crate::sse::SseClients;
 use crate::SessionManagerConfig;
 use futures::future::LocalBoxFuture;
 use futures::FutureExt;
 use std::rc::Rc;
+use std::sync::Arc;
 use std::{future, net};
 use tokio::time::Duration;
 use ya_relay_core::testing::TestServerWrapper;
@@ -34,7 +36,8 @@ pub async fn init_test_server() -> anyhow::Result<ServerWrapper> {
 }
 
 pub async fn init_test_server_with_config(config: Config) -> anyhow::Result<ServerWrapper> {
-    let server = Rc::new(crate::run(&config, ).await?);
+    let sse_clients = Arc::new(SseClients::new());
+    let server = Rc::new(crate::run(&config, sse_clients.clone()).await?);
 
     Ok(ServerWrapper { server })
 }

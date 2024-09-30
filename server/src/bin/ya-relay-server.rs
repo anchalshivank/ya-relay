@@ -1,22 +1,20 @@
+use actix_web::get;
+use actix_web::web;
+use actix_web::Responder;
+use actix_web_lab::sse::Sse;
 use clap::Parser;
+use futures_util::StreamExt;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::convert::Infallible;
 use std::future;
 use std::net::SocketAddr;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::time::Duration;
-use actix_web::get;
-use actix_web::web::Data;
-use actix_web_lab::extract::Path;
-use actix_web_lab::sse;
-use actix_web_lab::sse::Sse;
-use futures_util::StreamExt;
-use serde::{Deserialize, Serialize};
-use tokio_stream::wrappers::ReceiverStream;
 use ya_relay_core::NodeId;
 use ya_relay_server::metrics::register_metrics;
-use ya_relay_server::{AddrStatus, Config, Selector, SessionManager};
 use ya_relay_server::sse::SseClients;
+use ya_relay_server::{AddrStatus, Config, Selector, SessionManager};
 
 #[get("/sse")]
 async fn new_sse_client(sse_clients: web::Data<Arc<SseClients>>) -> impl Responder {
@@ -30,11 +28,9 @@ async fn new_sse_client(sse_clients: web::Data<Arc<SseClients>>) -> impl Respond
     Sse::from_stream(result_stream).with_keep_alive(Duration::from_secs(10))
 }
 
-
 #[get("/sessions")]
 async fn sessions_list(sm: web::Data<Arc<SessionManager>>) -> impl Responder {
     format!("sessions: {}", sm.num_sessions())
-
 }
 
 #[derive(Deserialize)]
@@ -88,7 +84,6 @@ async fn nodes_list_prefix(
         .collect();
     Ok(web::Json(nodes))
 }
-
 
 #[actix_rt::main]
 async fn main() -> anyhow::Result<()> {
