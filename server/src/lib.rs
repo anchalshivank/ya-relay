@@ -2,11 +2,11 @@
 mod config;
 pub mod metrics;
 mod server;
+pub mod sse;
 mod state;
 #[cfg(feature = "test-utils")]
 pub mod testing;
 pub mod udp_server;
-pub mod sse;
 
 pub use state::session_manager::*;
 

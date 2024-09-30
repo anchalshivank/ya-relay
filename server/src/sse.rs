@@ -1,25 +1,20 @@
-use std::sync::{Arc, Mutex};
 use actix_web_lab::sse;
-use actix_web_lab::sse::Event;
-use futures_util::SinkExt;
-use log::{info, log};
+use log::info;
+use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc;
-use tokio::sync::mpsc::{channel, Receiver};
 use tokio_stream::wrappers::ReceiverStream;
 
 #[derive(Debug, Clone, Default)]
-pub struct SseClients{
-    clients: Arc<Mutex<Vec<mpsc::Sender<sse::Event>>>>
+pub struct SseClients {
+    clients: Arc<Mutex<Vec<mpsc::Sender<sse::Event>>>>,
 }
 
-impl SseClients{
-    pub fn new() -> Self{
-        SseClients{
+impl SseClients {
+    pub fn new() -> Self {
+        SseClients {
             clients: Arc::new(Mutex::new(Vec::new())),
         }
     }
-
-
 
     pub async fn add_client(&self) -> ReceiverStream<sse::Event> {
         let (tx, rx) = mpsc::channel(10);
@@ -35,13 +30,15 @@ impl SseClients{
         ReceiverStream::new(rx)
     }
 
-    pub fn get_no_of_clients(&self) -> usize{
+    pub fn get_no_of_clients(&self) -> usize {
         self.clients.lock().unwrap().len()
     }
 
-    pub async fn broadcast(&self, msg:&str){
+    pub async fn broadcast(&self, msg: &str) {
         let clients = self.clients.lock().unwrap().clone();
-        let send_futures = clients.iter().map(|client| client.send(sse::Data::new(msg).into()));
+        let send_futures = clients
+            .iter()
+            .map(|client| client.send(sse::Data::new(msg).into()));
         let _ = futures_util::future::join_all(send_futures).await;
     }
 }
